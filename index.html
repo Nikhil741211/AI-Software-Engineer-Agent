@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Software Engineer Agent</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    :root {
+      --bg: #050505;
+      --panel: #0b0b0b;
+      --line: rgba(255,255,255,0.13);
+      --text: #f5f5f5;
+      --muted: #777;
+      --green: #26ff73;
+      --yellow: #ffb300;
+      --red: #ff4b4b;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    .grain {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.08;
+      background-image:
+        radial-gradient(#fff 0.7px, transparent 0.7px);
+      background-size: 18px 18px;
+      z-index: 30;
+      mix-blend-mode: overlay;
+    }
+
+    .mouse-light {
+      position: fixed;
+      width: 380px;
+      height: 380px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(38,255,115,0.12), transparent 65%);
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      z-index: 0;
+    }
+
+    .page {
+      width: min(1160px, 92%);
+      margin: auto;
+      position: relative;
+      z-index: 2;
+    }
+
+    header {
+      height: 78px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line);
+      font-size: 12px;
+      letter-spacing: -0.2px;
+      position: sticky;
+      top: 0;
+      background: rgba(5,5,5,0.72);
+      backdrop-filter: blur(18px);
+      z-index: 20;
+    }
+
+    .logo {
+      font-weight: 800;
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 30px;
+    }
+
+    nav a {
+      color: #bdbdbd;
+      text-decoration: none;
+      transition: 0.25s;
+    }
+
+    nav a:hover {
+      color: #fff;
+    }
+
+    .available {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    .available span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 13px var(--green);
+    }
+
+    .hero {
+      min-height: 650px;
+      display: grid;
+      grid-template-columns: 1.02fr 0.98fr;
+      align-items: center;
+      gap: 40px;
+      padding: 64px 0 44px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .hero-copy {
+      position: relative;
+    }
+
+    .tiny {
+      color: #9b9b9b;
+      font-size: 12px;
+      margin-bottom: 26px;
+      display: inline-flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .tiny::before {
+      content: "";
+      width: 38px;
+      height: 1px;
+      background: #888;
+      display: block;
+    }
+
+    .hero h1 {
+      font-size: clamp(44px, 6.3vw, 86px);
+      line-height: 0.93;
+      letter-spacing: -5px;
+      max-width: 620px;
+      font-weight: 800;
+    }
+
+    .hero h1 .outline {
+      color: transparent;
+      -webkit-text-stroke: 1px #f5f5f5;
+    }
+
+    .hero p {
+      color: #9d9d9d;
+      max-width: 460px;
+      line-height: 1.8;
+      font-size: 14px;
+      margin-top: 28px;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 36px;
+    }
+
+    .round-btn {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: #0f0f0f;
+      color: var(--green);
+      cursor: pointer;
+      font-size: 22px;
+      transition: 0.25s;
+    }
+
+    .round-btn:hover {
+      background: var(--green);
+      color: #050505;
+      transform: rotate(-20deg) scale(1.06);
+    }
+
+    .text-link {
+      color: #fff;
+      font-weight: 700;
+      font-size: 13px;
+      text-decoration: none;
+    }
+
+    .showcase {
+      position: relative;
+      min-height: 560px;
+    }
+
+    .browser-card {
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: min(520px, 100%);
+      height: 420px;
+      background: #101010;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 40px 120px rgba(0,0,0,0.65);
+    }
+
+    .browser-top {
+      height: 44px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      color: #8d8d8d;
+      font-size: 11px;
+    }
+
+    .dots {
+      display: flex;
+      gap: 7px;
+    }
+
+    .dots span {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ff5f56;
+    }
+
+    .dots span:nth-child(2) {
+      background: #ffbd2e;
+    }
+
+    .dots span:nth-child(3) {
+      background: #27c93f;
+    }
+
+    .browser-body {
+      height: calc(100% - 44px);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .slide-track {
+      height: 200%;
+      animation: scrollCards 11s linear infinite;
+    }
+
+    @keyframes scrollCards {
+      0% {
+        transform: translateY(0);
+      }
+      100% {
+        transform: translateY(-50%);
+      }
+    }
+
+    .slide {
+      height: 25%;
+      padding: 20px;
+      display: grid;
+      align-items: stretch;
+    }
+
+    .work-card {
+      border-radius: 6px;
+      padding: 24px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .work-card h2 {
+      font-size: 38px;
+      line-height: 0.92;
+      letter-spacing: -3px;
+      max-width: 330px;
+    }
+
+    .work-card p {
+      font-size: 13px;
+      line-height: 1.6;
+      max-width: 330px;
+      opacity: 0.78;
+    }
+
+    .yellow {
+      background: var(--yellow);
+      color: #090909;
+    }
+
+    .dark {
+      background: #171717;
+      color: #fff;
+      border: 1px solid var(--line);
+    }
+
+    .green {
+      background: #0d321d;
+      color: #fff;
+      border: 1px solid rgba(38,255,115,0.2);
+    }
+
+    .red {
+      background: #2e0f12;
+      color: #fff;
+      border: 1px solid rgba(255,75,75,0.22);
+    }
+
+    .fake-paper {
+      position: absolute;
+      width: 150px;
+      height: 110px;
+      background: #f2f2f2;
+      color: #111;
+      right: 34px;
+      bottom: 26px;
+      transform: rotate(-13deg);
+      border-radius: 3px;
+      box-shadow: 0 20px 35px rgba(0,0,0,0.23);
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .floating-pill {
+      position: absolute;
+      padding: 11px 15px;
+      background: #fff;
+      color: #050505;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.34);
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .pill-one {
+      left: -34px;
+      top: 124px;
+    }
+
+    .pill-two {
+      right: -26px;
+      bottom: 106px;
+      background: var(--green);
+    }
+
+    @keyframes float {
+      50% {
+        transform: translateY(-13px);
+      }
+    }
+
+    .section {
+      padding: 96px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: 1fr 0.8fr;
+      gap: 30px;
+      margin-bottom: 42px;
+      align-items: end;
+    }
+
+    .section-head h2 {
+      font-size: clamp(42px, 5.5vw, 82px);
+      line-height: 0.92;
+      letter-spacing: -4px;
+      font-weight: 800;
+    }
+
+    .section-head p {
+      color: #909090;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .marquee {
+      width: 100vw;
+      margin-left: calc((100vw - min(1160px, 92vw)) / -2);
+      overflow: hidden;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      padding: 18px 0;
+      margin-bottom: 42px;
+    }
+
+    .marquee-track {
+      display: flex;
+      gap: 34px;
+      white-space: nowrap;
+      animation: marquee 18s linear infinite;
+      color: #d8d8d8;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .marquee-track span {
+      color: var(--green);
+    }
+
+    @keyframes marquee {
+      from {
+        transform: translateX(0);
+      }
+      to {
+        transform: translateX(-50%);
+      }
+    }
+
+    .services {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .service {
+      min-height: 250px;
+      background: #101010;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 24px;
+      transition: 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .service:hover {
+      transform: translateY(-10px);
+      border-color: var(--green);
+    }
+
+    .service::after {
+      content: "";
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: rgba(38,255,115,0.08);
+      position: absolute;
+      right: -60px;
+      bottom: -60px;
+    }
+
+    .service span {
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .service h3 {
+      font-size: 26px;
+      line-height: 1;
+      letter-spacing: -1.4px;
+      margin: 24px 0 16px;
+    }
+
+    .service p {
+      color: #8f8f8f;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 20px;
+    }
+
+    .panel {
+      background: #0e0e0e;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+    }
+
+    .panel h3 {
+      font-size: 18px;
+      margin-bottom: 16px;
+      letter-spacing: -0.5px;
+    }
+
+    .issue {
+      padding: 14px;
+      background: #151515;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: 0.25s;
+    }
+
+    .issue:hover,
+    .issue.active {
+      border-color: var(--green);
+      transform: translateX(6px);
+    }
+
+    .issue h4 {
+      font-size: 14px;
+      line-height: 1.4;
+      margin-bottom: 11px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 9px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .approval {
+      background: #251936;
+      color: #d1b4ff;
+    }
+
+    .progress {
+      background: #10223d;
+      color: #91c9ff;
+    }
+
+    .pending {
+      background: #372909;
+      color: #ffd166;
+    }
+
+    .merged {
+      background: #07351f;
+      color: #7dffb2;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .metric {
+      background: #101010;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .metric p {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .metric h3 {
+      font-size: 28px;
+      margin-top: 8px;
+    }
+
+    .work-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .wide {
+      grid-column: 1 / -1;
+    }
+
+    .trace {
+      display: grid;
+      gap: 10px;
+    }
+
+    .trace-row {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 10px;
+      animation: rise 0.35s ease both;
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: var(--green);
+      color: #050505;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .trace-box {
+      background: #151515;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 11px;
+      color: #cfcfcf;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    pre {
+      background: #050505;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 18px;
+      color: #e8e8e8;
+      min-height: 320px;
+      max-height: 420px;
+      overflow: auto;
+      line-height: 1.65;
+      font-size: 13px;
+    }
+
+    .add {
+      color: #7dffb2;
+    }
+
+    .remove {
+      color: #ff8ba0;
+    }
+
+    .comment {
+      color: #777;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 108px;
+      resize: vertical;
+      background: #151515;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 13px;
+      color: white;
+      outline: none;
+      margin-bottom: 12px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 999px;
+      padding: 12px 16px;
+      margin-right: 8px;
+      cursor: pointer;
+      font-weight: 900;
+    }
+
+    .approve-btn {
+      background: var(--green);
+      color: #050505;
+    }
+
+    .reject-btn {
+      background: var(--red);
+      color: white;
+    }
+
+    .change-btn {
+      background: white;
+      color: #050505;
+    }
+
+    .message {
+      color: var(--green);
+      margin-top: 12px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .contact {
+      min-height: 500px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+    }
+
+    .contact h2 {
+      font-size: clamp(38px, 5.2vw, 78px);
+      line-height: 0.96;
+      letter-spacing: -4px;
+      max-width: 780px;
+      margin: auto;
+    }
+
+    .contact p {
+      color: #888;
+      margin: 24px auto 34px;
+      max-width: 520px;
+      line-height: 1.8;
+    }
+
+    footer {
+      padding: 34px 0;
+      display: flex;
+      justify-content: space-between;
+      color: #777;
+      font-size: 12px;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    @media (max-width: 1050px) {
+      .hero,
+      .section-head,
+      .dashboard,
+      .work-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .showcase {
+        min-height: 520px;
+      }
+
+      .browser-card {
+        left: 50%;
+        right: auto;
+        transform: translate(-50%, -50%);
+      }
+
+      .services,
+      .metrics {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 680px) {
+      header {
+        height: auto;
+        padding: 18px 0;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 18px;
+      }
+
+      nav {
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+
+      .hero h1,
+      .section-head h2,
+      .contact h2 {
+        letter-spacing: -2px;
+      }
+
+      .services,
+      .metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .browser-card {
+        width: 100%;
+      }
+
+      .floating-pill {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="grain"></div>
+  <div class="mouse-light" id="mouseLight"></div>
+
+  <main class="page">
+    <header>
+      <div class="logo">ai agent.</div>
+
+      <nav>
+        <a href="#work">workflow</a>
+        <a href="#architecture">architecture</a>
+        <a href="#dashboard">dashboard</a>
+        <a href="#deployment">deployment</a>
+        <div class="available"><span></span> internship project</div>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="tiny">AI SOFTWARE ENGINEER AGENT</div>
+
+        <h1>
+          ai software<br>
+          engineer<br>
+          <span class="outline">agent</span>
+        </h1>
+
+        <p>
+          Build an AI agent that reads GitHub issues, explores the codebase, writes fixes, generates tests, runs Docker sandbox checks, and waits for human approval before opening a PR.
+        </p>
+
+        <div class="hero-actions">
+          <button class="round-btn" onclick="scrollToDashboard()">↗</button>
+          <a class="text-link" href="#dashboard">View project dashboard</a>
+        </div>
+      </div>
+
+      <div class="showcase">
+        <div class="floating-pill pill-one">reasoning trace</div>
+        <div class="floating-pill pill-two">test passed</div>
+
+        <div class="browser-card">
+          <div class="browser-top">
+            <div class="dots"><span></span><span></span><span></span></div>
+            <div>agent.project/live</div>
+            <div style="color:var(--green)">● active</div>
+          </div>
+
+          <div class="browser-body">
+            <div class="slide-track">
+              <div class="slide">
+                <div class="work-card yellow">
+                  <div>
+                    <h2>github issue</h2>
+                    <p>Webhook receives issue and sends it to the Redis job queue.</p>
+                  </div>
+                  <div class="fake-paper">job<br>queued ✓</div>
+                </div>
+              </div>
+
+              <div class="slide">
+                <div class="work-card dark">
+                  <div>
+                    <h2>agent reasoning</h2>
+                    <p>Every file read, hypothesis, and code change is logged step-by-step.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="slide">
+                <div class="work-card green">
+                  <div>
+                    <h2>docker sandbox</h2>
+                    <p>Runs tests safely with no network, limited CPU, and limited memory.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="slide">
+                <div class="work-card red">
+                  <div>
+                    <h2>human approval</h2>
+                    <p>Reviewer approves the agent output before pull request merge.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="slide">
+                <div class="work-card yellow">
+                  <div>
+                    <h2>github issue</h2>
+                    <p>Webhook receives issue and sends it to the Redis job queue.</p>
+                  </div>
+                  <div class="fake-paper">job<br>queued ✓</div>
+                </div>
+              </div>
+
+              <div class="slide">
+                <div class="work-card dark">
+                  <div>
+                    <h2>agent reasoning</h2>
+                    <p>Every file read, hypothesis, and code change is logged step-by-step.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="slide">
+                <div class="work-card green">
+                  <div>
+                    <h2>docker sandbox</h2>
+                    <p>Runs tests safely with no network, limited CPU, and limited memory.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="slide">
+                <div class="work-card red">
+                  <div>
+                    <h2>human approval</h2>
+                    <p>Reviewer approves the agent output before pull request merge.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="work">
+      <div class="section-head">
+        <h2>production-style ai agent system</h2>
+        <p>
+          This section explains the full project workflow in the same clean portfolio style: dark UI, bold typography, animated cards, and dashboard preview.
+        </p>
+      </div>
+
+      <div class="marquee">
+        <div class="marquee-track">
+          <div>GITHUB ISSUE <span>●</span> CODE SEARCH <span>●</span> TEST GENERATION <span>●</span> DOCKER SANDBOX <span>●</span> HUMAN APPROVAL <span>●</span> PR READY <span>●</span></div>
+          <div>GITHUB ISSUE <span>●</span> CODE SEARCH <span>●</span> TEST GENERATION <span>●</span> DOCKER SANDBOX <span>●</span> HUMAN APPROVAL <span>●</span> PR READY <span>●</span></div>
+        </div>
+      </div>
+
+      <div class="services">
+        <div class="service">
+          <span>01</span>
+          <h3>GitHub Webhook</h3>
+          <p>New GitHub issue or label assignment triggers the agent automatically.</p>
+        </div>
+
+        <div class="service">
+          <span>02</span>
+          <h3>Codebase Exploration</h3>
+          <p>Agent traverses files, searches code, parses AST, and identifies the root cause.</p>
+        </div>
+
+        <div class="service">
+          <span>03</span>
+          <h3>Fix Generation</h3>
+          <p>Agent writes code fixes and generates tests covering the reported bug.</p>
+        </div>
+
+        <div class="service">
+          <span>04</span>
+          <h3>Human Approval</h3>
+          <p>Pull request opens only after human reviews the reasoning and approves.</p>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="section" id="architecture">
+      <div class="section-head">
+        <h2>project architecture</h2>
+        <p>
+          The system connects frontend, FastAPI backend, Redis queue, AI agent worker,
+          Docker sandbox, PostgreSQL, and GitHub pull request workflow.
+        </p>
+      </div>
+
+      <div class="services">
+        <div class="service">
+          <span>01</span>
+          <h3>Frontend UI</h3>
+          <p>Issue queue, reasoning trace, diff viewer, approval interface, and metrics dashboard.</p>
+        </div>
+
+        <div class="service">
+          <span>02</span>
+          <h3>Backend API</h3>
+          <p>FastAPI receives GitHub webhooks and stores jobs, traces, costs, and issue history.</p>
+        </div>
+
+        <div class="service">
+          <span>03</span>
+          <h3>Agent Worker</h3>
+          <p>LangGraph-style worker uses read_file, search_code, write_file, and run_tests tools.</p>
+        </div>
+
+        <div class="service">
+          <span>04</span>
+          <h3>Safe Runtime</h3>
+          <p>Docker sandbox blocks network access and runs tests with CPU and memory limits.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section dashboard" id="dashboard">
+      <aside class="panel">
+        <h3>agent reasoning</h3>
+        <div id="issueList"></div>
+      </aside>
+
+      <section>
+        <div class="metrics">
+          <div class="metric"><p>Resolved</p><h3 id="resolved">31</h3></div>
+          <div class="metric"><p>Avg Cost</p><h3>$0.19</h3></div>
+          <div class="metric"><p>Pass Rate</p><h3>96%</h3></div>
+          <div class="metric"><p>Awaiting</p><h3 id="awaiting">4</h3></div>
+        </div>
+
+        <div class="work-grid">
+          <div class="panel">
+            <h3 id="selectedTitle">reasoning trace</h3>
+            <div class="trace" id="trace"></div>
+          </div>
+
+          <div class="panel">
+            <h3>sandbox status</h3>
+            <div class="trace-box">Network: <b style="color:var(--green)">Blocked</b></div><br>
+            <div class="trace-box">CPU: <b style="color:var(--green)">0.5 Core</b></div><br>
+            <div class="trace-box">Memory: <b style="color:var(--green)">512MB</b></div><br>
+            <div class="trace-box">Tests: <b id="testStatus" style="color:var(--green)">Passed</b></div>
+          </div>
+
+          <div class="panel wide">
+            <h3>code diff viewer / live backend data</h3>
+            <button class="btn approve-btn" onclick="loadReasoningLog()">Load Real AI Reasoning</button>
+            <button class="btn change-btn" onclick="loadDatabaseIssues()">Load Database Issues</button>
+            <pre id="diffViewer"></pre>
+          </div>
+
+          <div class="panel wide">
+            <h3>human approval</h3>
+            <textarea id="comment" placeholder="Write review comment here..."></textarea>
+            <button class="btn approve-btn" onclick="review('Approved')">Approve PR</button>
+            <button class="btn reject-btn" onclick="review('Rejected')">Reject</button>
+            <button class="btn change-btn" onclick="review('Changes Requested')">Request Changes</button>
+            <p class="message" id="message"></p>
+          </div>
+        </div>
+      </section>
+    </section>
+
+
+    <section class="section" id="deployment">
+      <div class="section-head">
+        <h2>observability and deployment</h2>
+        <p>
+          This project is designed like a production system with monitoring,
+          scaling, sandbox alerts, and cloud-ready deployment.
+        </p>
+      </div>
+
+      <div class="services">
+        <div class="service">
+          <span>01</span>
+          <h3>Trace Logs</h3>
+          <p>Every tool call, token count, cost, file read, hypothesis, and execution result is logged.</p>
+        </div>
+
+        <div class="service">
+          <span>02</span>
+          <h3>Prometheus</h3>
+          <p>Tracks attempted issues, success rate, average tokens, and sandbox failures.</p>
+        </div>
+
+        <div class="service">
+          <span>03</span>
+          <h3>Grafana</h3>
+          <p>Shows issue trends, cost per fix over time, and test pass rate.</p>
+        </div>
+
+        <div class="service">
+          <span>04</span>
+          <h3>Docker Compose</h3>
+          <p>Runs FastAPI, worker, Redis, PostgreSQL, and Docker sandbox locally.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section contact" id="contact">
+      <div>
+        <h2>ready for backend integration</h2>
+        <p>
+          Connect this frontend with FastAPI, Redis, PostgreSQL, Docker sandbox, and GitHub webhooks later. The UI is ready for your internship project demo.
+        </p>
+        <button class="primary-btn btn approve-btn" onclick="scrollToDashboard()">open dashboard</button>
+      </div>
+    </section>
+
+    <footer>
+      <p>AI Software Engineer Agent</p>
+      <p>HTML • CSS • JavaScript • AI Agent Project</p>
+    </footer>
+  </main>
+
+  <script>
+    const light = document.getElementById("mouseLight");
+
+    document.addEventListener("mousemove", function(event) {
+      light.style.left = event.clientX + "px";
+      light.style.top = event.clientY + "px";
+    });
+
+    const issues = [
+      {
+        title: "Fix github issue crash",
+        status: "awaiting approval",
+        badge: "approval",
+        tests: "Passed",
+        trace: [
+          "Webhook received GitHub issue",
+          "Agent searched calculator module",
+          "Read calculator.py and tests",
+          "Found missing zero denominator check",
+          "Generated safe fix",
+          "Added regression test",
+          "Docker sandbox tests passed"
+        ],
+        diff:
+`<span class="comment">--- calculator.py</span>
+<span class="comment">+++ calculator.py</span>
+
+def divide(a, b):
+<span class="remove">-    return a / b</span>
+<span class="add">+    if b == 0:</span>
+<span class="add">+        return "Cannot github issue"</span>
+<span class="add">+    return a / b</span>
+
+<span class="comment">--- test_calculator.py</span>
+<span class="comment">+++ test_calculator.py</span>
+
+<span class="add">+def test_divide_by_zero():</span>
+<span class="add">+    assert divide(10, 0) == "Cannot github issue"</span>`
+      },
+      {
+        title: "Login validation issue from repository",
+        status: "in-progress",
+        badge: "progress",
+        tests: "Running",
+        trace: [
+          "Issue added to Redis queue",
+          "Worker started job",
+          "Searching auth files",
+          "Reading validation logic",
+          "Preparing candidate patch"
+        ],
+        diff:
+`<span class="comment">Agent is still exploring...</span>
+
+search_code("email validation")
+read_file("auth/login.py")
+read_file("tests/test_login.py")`
+      },
+      {
+        title: "Improve FastAPI error response",
+        status: "pending",
+        badge: "pending",
+        tests: "Not Started",
+        trace: [
+          "Issue is waiting in queue",
+          "No worker assigned yet"
+        ],
+        diff:
+`<span class="comment">No code changes generated yet.</span>`
+      },
+      {
+        title: "Fix user profile test failure",
+        status: "merged",
+        badge: "merged",
+        tests: "Passed",
+        trace: [
+          "Read profile service",
+          "Found missing username validation",
+          "Added validation",
+          "Created test",
+          "Reviewer approved PR",
+          "Merged successfully"
+        ],
+        diff:
+`<span class="comment">--- user_profile.py</span>
+<span class="comment">+++ user_profile.py</span>
+
+<span class="add">+if not username:</span>
+<span class="add">+    raise ValueError("Username is required")</span>`
+      }
+    ];
+
+    const issueList = document.getElementById("issueList");
+    const trace = document.getElementById("trace");
+    const diffViewer = document.getElementById("diffViewer");
+    const selectedTitle = document.getElementById("selectedTitle");
+    const testStatus = document.getElementById("testStatus");
+
+    function renderIssues() {
+      issueList.innerHTML = "";
+
+      issues.forEach(function(issue, index) {
+        const div = document.createElement("div");
+        div.className = "issue";
+        div.innerHTML = `
+          <h4>${issue.title}</h4>
+          <span class="badge ${issue.badge}">${issue.status}</span>
+        `;
+
+        div.onclick = function() {
+          selectIssue(issue, div);
+        };
+
+        issueList.appendChild(div);
+
+        if (index === 0) {
+          selectIssue(issue, div);
+        }
+      });
+    }
+
+    function selectIssue(issue, element) {
+      document.querySelectorAll(".issue").forEach(function(card) {
+        card.classList.remove("active");
+      });
+
+      element.classList.add("active");
+      selectedTitle.textContent = issue.title;
+      testStatus.textContent = issue.tests;
+      diffViewer.innerHTML = issue.diff;
+
+      trace.innerHTML = "";
+
+      issue.trace.forEach(function(step, index) {
+        const row = document.createElement("div");
+        row.className = "trace-row";
+        row.style.animationDelay = (index * 0.06) + "s";
+        row.innerHTML = `
+          <div class="dot">${index + 1}</div>
+          <div class="trace-box">${step}</div>
+        `;
+        trace.appendChild(row);
+      });
+
+      document.getElementById("message").textContent = "";
+    }
+
+    function review(action) {
+      const comment = document.getElementById("comment").value.trim();
+
+      if (!comment) {
+        document.getElementById("message").textContent = "Please write a review comment first.";
+        return;
+      }
+
+      document.getElementById("message").textContent = action + " submitted successfully.";
+    }
+
+    function scrollToDashboard() {
+      document.getElementById("dashboard").scrollIntoView({ behavior: "smooth" });
+    }
+
+    async function loadReasoningLog() {
+      try {
+        const response = await fetch("http://127.0.0.1:8000/reasoning-log");
+        const data = await response.json();
+
+        selectedTitle.textContent = "Real AI Reasoning Log";
+        testStatus.textContent = data.status;
+        diffViewer.textContent = data.log;
+
+        trace.innerHTML = "";
+        const steps = data.log.split("\n\n").filter(Boolean).slice(0, 12);
+        steps.forEach(function(step, index) {
+          const row = document.createElement("div");
+          row.className = "trace-row";
+          row.style.animationDelay = (index * 0.06) + "s";
+          row.innerHTML = `
+            <div class="dot">${index + 1}</div>
+            <div class="trace-box">${step}</div>
+          `;
+          trace.appendChild(row);
+        });
+      } catch (error) {
+        diffViewer.textContent = "Could not connect to backend. Make sure FastAPI is running.";
+      }
+    }
+
+    async function loadDatabaseIssues() {
+      try {
+        const response = await fetch("http://127.0.0.1:8000/issues");
+        const data = await response.json();
+
+        if (!data.issues || data.issues.length === 0) {
+          selectedTitle.textContent = "No database issues found";
+          diffViewer.textContent = "No issues saved in database yet.";
+          return;
+        }
+
+        const latestIssue = data.issues[data.issues.length - 1];
+
+        selectedTitle.textContent = latestIssue.issue_title;
+        testStatus.textContent = latestIssue.approval_status;
+        diffViewer.textContent = latestIssue.reasoning_log;
+
+        trace.innerHTML = "";
+        const steps = latestIssue.reasoning_log.split("\n\n").filter(Boolean).slice(0, 12);
+        steps.forEach(function(step, index) {
+          const row = document.createElement("div");
+          row.className = "trace-row";
+          row.style.animationDelay = (index * 0.06) + "s";
+          row.innerHTML = `
+            <div class="dot">${index + 1}</div>
+            <div class="trace-box">${step}</div>
+          `;
+          trace.appendChild(row);
+        });
+      } catch (error) {
+        diffViewer.textContent = "Could not load database issues. Make sure FastAPI is running.";
+      }
+    }
+
+    renderIssues();
+  </script>
+</body>
+</html>

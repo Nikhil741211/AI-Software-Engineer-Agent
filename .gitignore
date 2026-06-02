@@ -1,0 +1,7 @@
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+agent.db
+reasoning_log.txt
+approval_status.txt
