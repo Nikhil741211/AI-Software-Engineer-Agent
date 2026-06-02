@@ -7,6 +7,8 @@ from ast_tools import get_functions
 from dependency_graph import get_imports
 from database import init_db, save_issue
 from rag_tools import search_relevant_files
+from guardrails import check_cost_limit
+from loop_detector import check_loop
 
 load_dotenv()
 
@@ -78,12 +80,57 @@ def run_agent(issue):
 
     reasoning.append(f"🔍 RAG relevant files: {matches}")
 
+    attempts = 0
+
     for file in matches:
+        attempts += 1
+
+        can_continue, loop_message = check_loop(attempts)
+        reasoning.append(
+            f"🔁 Loop Check: attempt={attempts}, status={loop_message}"
+        )
+
+        if not can_continue:
+            reasoning.append("⛔ Loop detected. Agent stopped.")
+            save_reasoning_log(reasoning)
+
+            init_db()
+            save_issue(
+                issue_title=issue,
+                reasoning_log="\n\n".join(reasoning),
+                approval_status="stopped_loop_detected"
+            )
+
+            return {
+                "reasoning": reasoning
+            }
+
         if not file.endswith(".py"):
             continue
 
         code = read_file(file)
         reasoning.append(f"📖 Reading file: {file}")
+
+        allowed, tokens, cost = check_cost_limit(issue + code)
+
+        reasoning.append(
+            f"💰 Cost Check: tokens={tokens}, estimated_cost=${cost}"
+        )
+
+        if not allowed:
+            reasoning.append("⛔ Cost limit exceeded. Agent stopped.")
+            save_reasoning_log(reasoning)
+
+            init_db()
+            save_issue(
+                issue_title=issue,
+                reasoning_log="\n\n".join(reasoning),
+                approval_status="stopped_cost_limit"
+            )
+
+            return {
+                "reasoning": reasoning
+            }
 
         fixed_code = ask_ai(issue, code)
         fixed_code = clean_code(fixed_code)

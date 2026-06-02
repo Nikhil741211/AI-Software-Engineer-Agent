@@ -999,18 +999,6 @@
     </section>
 
     <section class="section dashboard" id="dashboard">
-<div style="margin-top: 30px; padding: 20px; border: 1px solid #333; border-radius: 12px;">
-  <h2>Live Backend Approval Dashboard</h2>
-
-  <button onclick="loadIssues()">Load Issues</button>
-  <button onclick="approveFix()">Approve Fix</button>
-  <button onclick="rejectFix()">Reject Fix</button>
-
-  <pre id="backendOutput" style="white-space: pre-wrap; margin-top: 20px; padding: 15px; background: #111; color: #0f0; border-radius: 10px; max-height: 500px; overflow: auto;">
-Click a button to load backend data.
-  </pre>
-</div>
-
       <aside class="panel">
         <h3>agent reasoning</h3>
         <div id="issueList"></div>
@@ -1334,42 +1322,5 @@ read_file("tests/test_login.py")`
 
     renderIssues();
   </script>
-
-<script>
-async function loadIssues() {
-  const output = document.getElementById("backendOutput");
-  output.textContent = "Loading issues...";
-
-  const res = await fetch("http://127.0.0.1:8000/issues");
-  const data = await res.json();
-
-  output.textContent = JSON.stringify(data, null, 2);
-}
-
-async function approveFix() {
-  const output = document.getElementById("backendOutput");
-  output.textContent = "Approving fix and creating PR...";
-
-  const res = await fetch("http://127.0.0.1:8000/approve", {
-    method: "POST"
-  });
-
-  const data = await res.json();
-  output.textContent = JSON.stringify(data, null, 2);
-}
-
-async function rejectFix() {
-  const output = document.getElementById("backendOutput");
-  output.textContent = "Rejecting fix...";
-
-  const res = await fetch("http://127.0.0.1:8000/reject", {
-    method: "POST"
-  });
-
-  const data = await res.json();
-  output.textContent = JSON.stringify(data, null, 2);
-}
-</script>
-
 </body>
 </html>
