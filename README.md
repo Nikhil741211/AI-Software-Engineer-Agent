@@ -40,3 +40,12 @@ Completed:
 - Frontend Dashboard
 
 Project ready for internship demonstration and technical interviews.
+
+## How to Run
+
+### 1. Create virtual environment
+
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
