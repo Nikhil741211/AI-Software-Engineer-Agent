@@ -788,6 +788,55 @@
       }
     }
   </style>
+
+<style>
+.production-dashboard {
+  margin-top: 30px;
+  padding: 24px;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.85);
+  color: white;
+}
+
+.production-dashboard h2 {
+  margin-bottom: 8px;
+}
+
+.dashboard-actions {
+  display: flex;
+  gap: 12px;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+
+.dashboard-actions button {
+  padding: 12px 18px;
+  border: none;
+  border-radius: 10px;
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.dashboard-actions button:hover {
+  background: #1d4ed8;
+}
+
+.dashboard-output {
+  white-space: pre-wrap;
+  margin-top: 20px;
+  padding: 18px;
+  background: #020617;
+  color: #22c55e;
+  border-radius: 12px;
+  max-height: 520px;
+  overflow: auto;
+  font-size: 14px;
+}
+</style>
+
 </head>
 
 <body>
@@ -999,17 +1048,22 @@
     </section>
 
     <section class="section dashboard" id="dashboard">
-<div style="margin-top: 30px; padding: 20px; border: 1px solid #333; border-radius: 12px;">
-  <h2>Live Backend Approval Dashboard</h2>
 
-  <button onclick="loadIssues()">Load Issues</button>
-  <button onclick="approveFix()">Approve Fix</button>
-  <button onclick="rejectFix()">Reject Fix</button>
+<div class="production-dashboard">
+  <h2>Production Approval Dashboard</h2>
+  <p>Review AI-generated fixes, inspect reasoning logs, approve pull requests, or reject unsafe changes.</p>
 
-  <pre id="backendOutput" style="white-space: pre-wrap; margin-top: 20px; padding: 15px; background: #111; color: #0f0; border-radius: 10px; max-height: 500px; overflow: auto;">
-Click a button to load backend data.
+  <div class="dashboard-actions">
+    <button onclick="loadIssues()">Load Issues</button>
+    <button onclick="approveFix()">Approve Fix</button>
+    <button onclick="rejectFix()">Reject Fix</button>
+  </div>
+
+  <pre id="backendOutput" class="dashboard-output">
+Click Load Issues to fetch PostgreSQL records.
   </pre>
 </div>
+
 
       <aside class="panel">
         <h3>agent reasoning</h3>
