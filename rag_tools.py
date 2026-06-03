@@ -1,18 +1,10 @@
-from sentence_transformers import SentenceTransformer
-import faiss
 import os
 
-model = SentenceTransformer("all-MiniLM-L6-v2")
 
-documents = []
-file_paths = []
+def search_relevant_files(query, top_k=3):
+    results = []
 
-
-def build_index():
-    global documents, file_paths
-
-    documents = []
-    file_paths = []
+    keywords = query.lower().split()
 
     for root, dirs, files in os.walk("."):
         for file in files:
@@ -21,34 +13,24 @@ def build_index():
 
                 try:
                     with open(path, "r") as f:
-                        content = f.read()
+                        content = f.read().lower()
 
-                    documents.append(content)
-                    file_paths.append(path)
+                    score = 0
+                    for word in keywords:
+                        if word in content or word in file.lower():
+                            score += 1
+
+                    if score > 0:
+                        results.append((score, path))
 
                 except Exception:
                     pass
 
-    embeddings = model.encode(documents)
+    results.sort(reverse=True)
 
-    dimension = embeddings.shape[1]
+    files = [path for score, path in results[:top_k]]
 
-    index = faiss.IndexFlatL2(dimension)
-    index.add(embeddings)
+    if not files:
+        files = ["./sample_code.py"]
 
-    return index
-
-
-def search_relevant_files(query, top_k=3):
-    index = build_index()
-
-    query_embedding = model.encode([query])
-
-    distances, indices = index.search(query_embedding, top_k)
-
-    results = []
-
-    for idx in indices[0]:
-        results.append(file_paths[idx])
-
-    return results
+    return files

@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+redis
+rq
+psycopg2-binary
+python-dotenv
+requests
+groq
+pytest

@@ -1,11 +1,12 @@
+import os
 import psycopg2
 
 
-DB_NAME = "ai_agent_db"
-DB_USER = "lalitha13"
-DB_PASSWORD = ""
-DB_HOST = "localhost"
-DB_PORT = "5432"
+DB_NAME = os.getenv("DB_NAME", "ai_agent_db")
+DB_USER = os.getenv("DB_USER", "lalitha13")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_PORT = os.getenv("DB_PORT", "5432")
 
 
 def get_connection():
@@ -20,9 +21,9 @@ def get_connection():
 
 def init_db():
     conn = get_connection()
-    cursor = conn.cursor()
+    cur = conn.cursor()
 
-    cursor.execute("""
+    cur.execute("""
     CREATE TABLE IF NOT EXISTS issues (
         id SERIAL PRIMARY KEY,
         issue_title TEXT,
@@ -34,38 +35,47 @@ def init_db():
     """)
 
     conn.commit()
-    cursor.close()
+    cur.close()
     conn.close()
 
 
 def save_issue(issue_title, reasoning_log, approval_status, pr_url=None):
     conn = get_connection()
-    cursor = conn.cursor()
+    cur = conn.cursor()
 
-    cursor.execute("""
-    INSERT INTO issues
-    (issue_title, reasoning_log, approval_status, pr_url)
-    VALUES (%s, %s, %s, %s)
-    """, (issue_title, reasoning_log, approval_status, pr_url))
+    cur.execute(
+        """
+        INSERT INTO issues
+        (issue_title, reasoning_log, approval_status, pr_url)
+        VALUES (%s, %s, %s, %s)
+        """,
+        (issue_title, reasoning_log, approval_status, pr_url)
+    )
 
     conn.commit()
-    cursor.close()
+    cur.close()
     conn.close()
 
 
 def get_all_issues():
     conn = get_connection()
-    cursor = conn.cursor()
+    cur = conn.cursor()
 
-    cursor.execute("""
-    SELECT id, issue_title, reasoning_log, approval_status, pr_url, created_at
+    cur.execute("""
+    SELECT
+        id,
+        issue_title,
+        reasoning_log,
+        approval_status,
+        pr_url,
+        created_at
     FROM issues
     ORDER BY id DESC
     """)
 
-    rows = cursor.fetchall()
+    rows = cur.fetchall()
 
-    cursor.close()
+    cur.close()
     conn.close()
 
     return rows

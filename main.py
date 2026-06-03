@@ -1,8 +1,15 @@
-from fastapi import FastAPI
+import os
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+
+from redis import Redis
+from rq import Queue
 
 from database import get_all_issues
 from github_tools import create_pr_after_approval
+from worker import process_issue
+
 
 app = FastAPI()
 
@@ -15,10 +22,42 @@ app.add_middleware(
 )
 
 
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+
+redis_conn = Redis(
+    host=REDIS_HOST,
+    port=REDIS_PORT
+)
+
+q = Queue(connection=redis_conn)
+
+
 @app.get("/")
 def home():
     return {
         "message": "AI Software Engineer Agent Running"
+    }
+
+
+@app.post("/webhook")
+async def github_webhook(request: Request):
+    payload = await request.json()
+
+    issue = payload.get("issue")
+
+    if issue:
+        title = issue.get("title", "")
+
+        q.enqueue(process_issue, title)
+
+        return {
+            "status": "queued",
+            "issue": title
+        }
+
+    return {
+        "status": "ignored"
     }
 
 
