@@ -1,12 +1,20 @@
 import os
 
+from workspace_manager import get_repo_path
 
-def search_relevant_files(query, top_k=3):
+
+def search_relevant_files(query, top_k=3, repo_name="test_repo"):
     results = []
 
     keywords = query.lower().split()
+    repo_path = get_repo_path(repo_name)
 
-    for root, dirs, files in os.walk("."):
+    for root, dirs, files in os.walk(repo_path):
+        dirs[:] = [
+            d for d in dirs
+            if d not in ["__pycache__", ".git", "venv", "node_modules"]
+        ]
+
         for file in files:
             if file.endswith(".py"):
                 path = os.path.join(root, file)
@@ -16,8 +24,12 @@ def search_relevant_files(query, top_k=3):
                         content = f.read().lower()
 
                     score = 0
+
                     for word in keywords:
-                        if word in content or word in file.lower():
+                        if word in content:
+                            score += 2
+
+                        if word in file.lower():
                             score += 1
 
                     if score > 0:
@@ -28,9 +40,11 @@ def search_relevant_files(query, top_k=3):
 
     results.sort(reverse=True)
 
-    files = [path for score, path in results[:top_k]]
+    matched_files = [path for score, path in results[:top_k]]
 
-    if not files:
-        files = ["./sample_code.py"]
+    if not matched_files:
+        fallback = os.path.join(repo_path, "sample_code.py")
+        if os.path.exists(fallback):
+            matched_files = [fallback]
 
-    return files
+    return matched_files

@@ -32,13 +32,12 @@ def search_code(keyword):
 def run_tests():
     result = subprocess.run(
         ["pytest"],
+        cwd="workspace/test_repo",
         capture_output=True,
         text=True
     )
 
     return result.stdout + result.stderr
-
-
 # FILE TREE TRAVERSAL
 def get_file_tree(root="."):
     files = []

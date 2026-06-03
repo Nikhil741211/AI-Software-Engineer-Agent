@@ -1054,9 +1054,10 @@
   <p>Review AI-generated fixes, inspect reasoning logs, approve pull requests, or reject unsafe changes.</p>
 
   <div class="dashboard-actions">
-    <button onclick="loadIssues()">Load Issues</button>
-    <button onclick="approveFix()">Approve Fix</button>
-    <button onclick="rejectFix()">Reject Fix</button>
+  <button onclick="loadIssues()">Load Issues</button>
+  <button onclick="loadDiff()">Load Diff</button>
+  <button onclick="approveFix()">Approve Fix</button>
+  <button onclick="rejectFix()">Reject Fix</button>
   </div>
 
   <pre id="backendOutput" class="dashboard-output">
@@ -1351,6 +1352,26 @@ read_file("tests/test_login.py")`
         diffViewer.textContent = "Could not connect to backend. Make sure FastAPI is running.";
       }
     }
+    async function loadDiff() {
+  const output = document.getElementById("backendOutput");
+  const diffViewer = document.getElementById("diffViewer");
+
+  output.textContent = "Loading code diff...";
+  diffViewer.textContent = "Loading diff from backend...";
+
+  try {
+    const res = await fetch("http://127.0.0.1:8000/diff");
+    const data = await res.json();
+
+    output.textContent = JSON.stringify(data, null, 2);
+
+    diffViewer.textContent =
+      data.diff || data.message || "No diff found";
+  } catch (error) {
+    output.textContent = "Could not connect to backend.";
+    diffViewer.textContent = "Make sure FastAPI is running.";
+  }
+}
 
     async function loadDatabaseIssues() {
       try {

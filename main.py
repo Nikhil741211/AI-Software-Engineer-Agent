@@ -82,6 +82,24 @@ def get_issues():
     }
 
 
+@app.get("/diff")
+def get_diff():
+    try:
+        with open("reasoning_log.txt", "r") as f:
+            content = f.read()
+
+        return {
+            "status": "success",
+            "diff": content
+        }
+
+    except FileNotFoundError:
+        return {
+            "status": "error",
+            "message": "No reasoning log found yet"
+        }
+
+
 @app.post("/approve")
 def approve_fix():
     pr = create_pr_after_approval()

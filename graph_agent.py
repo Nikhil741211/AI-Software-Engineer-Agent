@@ -165,3 +165,34 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+def fix_divide_by_zero_bug():
+    file_path = "./sample_code.py"
+    lines = []
+    with open(file_path, "r") as file:
+        for line in file:
+            lines.append(line)
+
+    new_lines = []
+    for line in lines:
+        if "if b == 0:" in line:
+            new_lines.append(line)
+            new_lines.append("        if a > 0:\n")
+            new_lines.append("            return float('inf')\n")
+            new_lines.append("        elif a < 0:\n")
+            new_lines.append("            return float('-inf')\n")
+            new_lines.append("        else:\n")
+            new_lines.append("            return 0\n")
+        else:
+            new_lines.append(line)
+
+    with open(file_path, "w") as file:
+        for line in new_lines:
+            file.write(line)
+
+
+if __name__ == "__main__":
+    fix_divide_by_zero_bug()
+    print(safe_divide(10, 0))
+    print(safe_divide(10, 'a'))
