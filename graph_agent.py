@@ -1,4 +1,4 @@
-from typing import TypedDict, List
+from typing import TypedDict, List, Dict
 from langgraph.graph import StateGraph, END
 
 from rag_tools import search_relevant_files
@@ -11,48 +11,90 @@ class AgentState(TypedDict):
     files: List[str]
     selected_file: str
     code: str
+    file_codes: Dict[str, str]
     fixed_code: str
     test_results: str
     status: str
 
 
 def analyze_issue(state: AgentState):
-    print("🔍 Analyze Issue")
+    print("Analyze Issue")
     state["status"] = "issue_analyzed"
     return state
 
 
 def rag_search_node(state: AgentState):
-    print("🧠 RAG Search")
+    print("RAG Search")
+
     files = search_relevant_files(state["issue"])
+
     state["files"] = files
-    state["selected_file"] = files[0]
+
+    if files:
+        state["selected_file"] = files[0]
+    else:
+        state["selected_file"] = ""
+
+    print(f"Relevant files: {files}")
+
     return state
 
 
 def read_code_node(state: AgentState):
-    print("📖 Read Code")
-    code = read_file(state["selected_file"])
-    state["code"] = code
+    print("Read Multiple Files")
+
+    combined_code = ""
+    file_codes = {}
+
+    for file in state["files"]:
+        try:
+            code = read_file(file)
+            file_codes[file] = code
+
+            combined_code += f"\n\n# FILE: {file}\n"
+            combined_code += code
+
+        except Exception as e:
+            print(f"Could not read {file}: {e}")
+
+    state["file_codes"] = file_codes
+    state["code"] = combined_code
+
     return state
 
 
 def generate_fix_node(state: AgentState):
-    print("🤖 Generate Fix")
-    fixed_code = ask_ai(state["issue"], state["code"])
+    print("Generate Multi-file Aware Fix")
+
+    prompt_code = state["code"]
+
+    fixed_code = ask_ai(state["issue"], prompt_code)
     fixed_code = clean_code(fixed_code)
+
     state["fixed_code"] = fixed_code
+
     return state
 
 
 def write_fix_node(state: AgentState):
-    print("✍️ Write Fix")
-    write_file(state["selected_file"], state["fixed_code"])
+    print("Write Fix")
+
+    target_file = state["selected_file"]
+
+    if not target_file:
+        state["status"] = "no_target_file"
+        return state
+
+    write_file(target_file, state["fixed_code"])
+
+    print(f"Fix written to {target_file}")
+
     return state
 
 
 def run_tests_node(state: AgentState):
-    print("🧪 Run Tests")
+    print("Run Tests")
+
     test_results = run_tests()
     state["test_results"] = test_results
 
@@ -91,9 +133,35 @@ if __name__ == "__main__":
         "files": [],
         "selected_file": "",
         "code": "",
+        "file_codes": {},
         "fixed_code": "",
         "test_results": "",
         "status": ""
     })
 
     print(result)
+
+
+def divide(a, b):
+    if not isinstance(a, (int, float)) or not isinstance(b, (int, float)):
+        raise TypeError("Both inputs must be numbers")
+    if b == 0:
+        raise ZeroDivisionError("Cannot divide by zero")
+    return a / b
+
+
+def safe_divide(a, b):
+    try:
+        return divide(a, b)
+    except Exception as e:
+        print(f"An error occurred in safe_divide: {e}")
+        return None
+
+
+def main():
+    print(safe_divide(10, 0))
+    print(safe_divide(10, 'a'))
+
+
+if __name__ == "__main__":
+    main()

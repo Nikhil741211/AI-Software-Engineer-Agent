@@ -1,3 +1,4 @@
+from issue_classifier import classify_issue
 import os
 from groq import Groq
 from dotenv import load_dotenv
@@ -56,6 +57,8 @@ def clean_code(code):
 
 def run_agent(issue):
     reasoning = []
+    issue_type = classify_issue(issue)
+    reasoning.append(f"🧩 Issue classified as: {issue_type}")
 
     reasoning.append(f"📩 Received issue: {issue}")
 
