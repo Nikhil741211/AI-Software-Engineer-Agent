@@ -49,3 +49,4 @@ Project ready for internship demonstration and technical interviews.
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+AI approval test Thu Jun  4 13:25:34 IST 2026
