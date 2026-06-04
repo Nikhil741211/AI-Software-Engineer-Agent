@@ -67,7 +67,10 @@ async def github_webhook(request: Request):
     repository = payload.get("repository", {})
 
     if issue:
-        title = issue.get("title", "")
+        if isinstance(issue, dict):
+            title = issue.get("title", "")
+        else:
+            title = str(issue)
 
         repo_name = repository.get("name", os.getenv("GITHUB_REPO"))
         repo_full_name = repository.get(
@@ -86,10 +89,11 @@ async def github_webhook(request: Request):
             "clone_url": clone_url
         }
 
-        q.enqueue(process_issue, job_payload)
+        job = q.enqueue(process_issue, job_payload)
 
         return {
             "status": "queued",
+            "job_id": job.id,
             "issue": title,
             "repo_name": repo_name,
             "repo_full_name": repo_full_name,
@@ -154,16 +158,10 @@ def approve_fix(x_api_key: str = Header(None)):
 
     pr = create_pr_after_approval()
 
-    pr_url = (
-        pr.get("html_url")
-        if isinstance(pr, dict)
-        else str(pr)
-    )
-
     return {
         "status": "approved",
         "message": "Fix approved and PR created",
-        "pr_url": pr_url
+        "pr_response": pr
     }
 
 

@@ -46,7 +46,11 @@ Workflow:
 """
     }
 
-    response = requests.post(url, headers=HEADERS, json=data)
+    response = requests.post(
+        url,
+        headers=HEADERS,
+        json=data
+    )
 
     if response.status_code == 422:
         return {
@@ -66,7 +70,7 @@ def create_pr_after_approval():
     if not os.path.exists(repo_path):
         return {
             "error": "Repository not found",
-            "message": "workspace/real_repo does not exist. Clone the repository first."
+            "message": f"{repo_path} does not exist. Clone the repository first."
         }
 
     subprocess.run(
@@ -89,6 +93,16 @@ def create_pr_after_approval():
         check=True
     )
 
+    subprocess.run(
+        ["git", "-C", repo_path, "config", "user.email", "ai-agent@example.com"],
+        check=True
+    )
+
+    subprocess.run(
+        ["git", "-C", repo_path, "config", "user.name", "AI Software Engineer Agent"],
+        check=True
+    )
+
     commit_result = subprocess.run(
         [
             "git",
@@ -108,7 +122,25 @@ def create_pr_after_approval():
             "details": commit_result.stdout + commit_result.stderr
         }
 
+    auth_remote = (
+        f"https://{GITHUB_TOKEN}@github.com/"
+        f"{GITHUB_OWNER}/{GITHUB_REPO}.git"
+    )
+
     subprocess.run(
+        [
+            "git",
+            "-C",
+            repo_path,
+            "remote",
+            "set-url",
+            "origin",
+            auth_remote
+        ],
+        check=True
+    )
+
+    push_result = subprocess.run(
         [
             "git",
             "-C",
@@ -118,8 +150,15 @@ def create_pr_after_approval():
             "origin",
             branch
         ],
-        check=True
+        capture_output=True,
+        text=True
     )
+
+    if push_result.returncode != 0:
+        return {
+            "error": "Git push failed",
+            "details": push_result.stdout + push_result.stderr
+        }
 
     pr = create_pull_request(branch)
 

@@ -30,8 +30,10 @@ services:
       DB_PASSWORD: postgres
       DB_HOST: postgres
       DB_PORT: 5432
-      REDIS_HOST: redis
+      REDIS_HOST: backend-redis-1
       REDIS_PORT: 6379
+    volumes:
+      - ./workspace:/app/workspace
     depends_on:
       - redis
       - postgres
@@ -49,6 +51,8 @@ services:
       DB_PORT: 5432
       REDIS_HOST: redis
       REDIS_PORT: 6379
+    volumes:
+      - ./workspace:/app/workspace
     depends_on:
       - redis
       - postgres
