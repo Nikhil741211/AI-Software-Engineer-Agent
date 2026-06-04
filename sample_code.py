@@ -2,7 +2,7 @@ def divide(a, b):
     if not isinstance(a, (int, float)) or not isinstance(b, (int, float)):
         raise TypeError("Both inputs must be numbers")
     if b == 0:
-        return float('inf')
+        return None
     return a / b
 
 def safe_divide(a, b):
