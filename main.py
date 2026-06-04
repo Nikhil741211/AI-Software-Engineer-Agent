@@ -73,8 +73,9 @@ def get_issues():
             "issue_title": row[1],
             "reasoning_log": row[2],
             "approval_status": row[3],
-            "pr_url": row[4],
-            "created_at": str(row[5])
+            "job_status": row[4],
+            "pr_url": row[5],
+            "created_at": str(row[6])
         })
 
     return {

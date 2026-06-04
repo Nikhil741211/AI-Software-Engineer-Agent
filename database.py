@@ -29,9 +29,15 @@ def init_db():
         issue_title TEXT,
         reasoning_log TEXT,
         approval_status TEXT,
+        job_status TEXT DEFAULT 'queued',
         pr_url TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
+    """)
+
+    cur.execute("""
+    ALTER TABLE issues
+    ADD COLUMN IF NOT EXISTS job_status TEXT DEFAULT 'queued'
     """)
 
     conn.commit()
@@ -39,17 +45,53 @@ def init_db():
     conn.close()
 
 
-def save_issue(issue_title, reasoning_log, approval_status, pr_url=None):
+def save_issue(
+    issue_title,
+    reasoning_log,
+    approval_status,
+    pr_url=None,
+    job_status="queued"
+):
     conn = get_connection()
     cur = conn.cursor()
 
     cur.execute(
         """
         INSERT INTO issues
-        (issue_title, reasoning_log, approval_status, pr_url)
-        VALUES (%s, %s, %s, %s)
+        (
+            issue_title,
+            reasoning_log,
+            approval_status,
+            job_status,
+            pr_url
+        )
+        VALUES (%s, %s, %s, %s, %s)
         """,
-        (issue_title, reasoning_log, approval_status, pr_url)
+        (
+            issue_title,
+            reasoning_log,
+            approval_status,
+            job_status,
+            pr_url
+        )
+    )
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+def update_job_status(issue_id, status):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        UPDATE issues
+        SET job_status = %s
+        WHERE id = %s
+        """,
+        (status, issue_id)
     )
 
     conn.commit()
@@ -67,6 +109,7 @@ def get_all_issues():
         issue_title,
         reasoning_log,
         approval_status,
+        job_status,
         pr_url,
         created_at
     FROM issues

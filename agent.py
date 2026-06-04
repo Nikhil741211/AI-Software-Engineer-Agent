@@ -17,8 +17,10 @@ load_dotenv()
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
+MAX_RETRIES = 3
 
-def ask_ai(issue, code, files):
+
+def ask_ai(issue, code, files, retry_note=""):
     prompt = f"""
 You are an expert Python software engineer.
 
@@ -30,6 +32,8 @@ RELEVANT FILES:
 
 CODE CONTEXT:
 {code}
+
+{retry_note}
 
 Fix the bug.
 
@@ -54,6 +58,7 @@ Rules:
 - Encode full updated file content using base64 and put it in content_b64.
 - Do not modify agent backend files.
 - Do not include explanations.
+- The decoded content must be valid Python code.
 """
 
     response = client.chat.completions.create(
@@ -111,7 +116,12 @@ def run_agent(issue):
         reasoning.append("⛔ No safe editable files found. Agent stopped.")
         save_reasoning_log(reasoning)
         init_db()
-        save_issue(issue, "\n\n".join(reasoning), "stopped_no_safe_files")
+        save_issue(
+            issue_title=issue,
+            reasoning_log="\n\n".join(reasoning),
+            approval_status="stopped_no_safe_files",
+            job_status="stopped_no_safe_files"
+        )
         return {"reasoning": reasoning}
 
     can_continue, loop_message = check_loop(1)
@@ -121,7 +131,12 @@ def run_agent(issue):
         reasoning.append("⛔ Loop detected. Agent stopped.")
         save_reasoning_log(reasoning)
         init_db()
-        save_issue(issue, "\n\n".join(reasoning), "stopped_loop_detected")
+        save_issue(
+            issue_title=issue,
+            reasoning_log="\n\n".join(reasoning),
+            approval_status="stopped_loop_detected",
+            job_status="stopped_loop_detected"
+        )
         return {"reasoning": reasoning}
 
     combined_code = ""
@@ -138,22 +153,53 @@ def run_agent(issue):
         reasoning.append("⛔ Cost limit exceeded. Agent stopped.")
         save_reasoning_log(reasoning)
         init_db()
-        save_issue(issue, "\n\n".join(reasoning), "stopped_cost_limit")
+        save_issue(
+            issue_title=issue,
+            reasoning_log="\n\n".join(reasoning),
+            approval_status="stopped_cost_limit",
+            job_status="stopped_cost_limit"
+        )
         return {"reasoning": reasoning}
 
-    ai_output = ask_ai(issue, combined_code, matches)
-    ai_output = clean_json_output(ai_output)
+    patches = []
+    ai_output = ""
 
-    reasoning.append("🤖 AI generated patch JSON")
-    reasoning.append(ai_output)
+    for retry in range(1, MAX_RETRIES + 1):
+        reasoning.append(f"🔄 Patch generation attempt {retry}/{MAX_RETRIES}")
 
-    patches = parse_patch(ai_output)
+        retry_note = ""
+        if retry > 1:
+            retry_note = """
+Previous attempt failed because the output was invalid.
+Return valid JSON only.
+Use content_b64 field only.
+Ensure base64 decodes to valid Python code.
+"""
+
+        ai_output = ask_ai(issue, combined_code, matches, retry_note)
+        ai_output = clean_json_output(ai_output)
+
+        reasoning.append("🤖 AI generated patch JSON")
+        reasoning.append(ai_output)
+
+        patches = parse_patch(ai_output)
+
+        if patches:
+            reasoning.append(f"✅ Valid patch JSON received on attempt {retry}")
+            break
+
+        reasoning.append(f"❌ Invalid patch JSON on attempt {retry}")
 
     if not patches:
-        reasoning.append("⛔ AI did not return valid patch JSON. Agent stopped.")
+        reasoning.append("⛔ Max retries reached. AI did not return valid patch JSON.")
         save_reasoning_log(reasoning)
         init_db()
-        save_issue(issue, "\n\n".join(reasoning), "stopped_invalid_patch")
+        save_issue(
+            issue_title=issue,
+            reasoning_log="\n\n".join(reasoning),
+            approval_status="max_retries_invalid_patch",
+            job_status="max_retries_invalid_patch"
+        )
         return {"reasoning": reasoning}
 
     patch_written = False
@@ -185,7 +231,12 @@ def run_agent(issue):
         reasoning.append("⛔ No valid patches were written. Agent stopped.")
         save_reasoning_log(reasoning)
         init_db()
-        save_issue(issue, "\n\n".join(reasoning), "stopped_no_valid_patch")
+        save_issue(
+            issue_title=issue,
+            reasoning_log="\n\n".join(reasoning),
+            approval_status="stopped_no_valid_patch",
+            job_status="stopped_no_valid_patch"
+        )
         return {"reasoning": reasoning}
 
     test_results = run_tests()
@@ -204,6 +255,12 @@ def run_agent(issue):
 
     save_reasoning_log(reasoning)
     init_db()
-    save_issue(issue, "\n\n".join(reasoning), approval_status)
+
+    save_issue(
+        issue_title=issue,
+        reasoning_log="\n\n".join(reasoning),
+        approval_status=approval_status,
+        job_status=approval_status
+    )
 
     return {"reasoning": reasoning}

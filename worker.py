@@ -1,7 +1,9 @@
 from agent import run_agent
 
+
 def process_issue(issue):
     print("⚙️ Processing issue:", issue)
+    print("📌 Status: running")
 
     result = run_agent(issue)
 

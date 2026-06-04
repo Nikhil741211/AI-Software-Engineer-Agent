@@ -1415,10 +1415,46 @@ async function loadIssues() {
   const output = document.getElementById("backendOutput");
   output.textContent = "Loading issues...";
 
-  const res = await fetch("http://127.0.0.1:8000/issues");
-  const data = await res.json();
+  try {
+    const res = await fetch("http://127.0.0.1:8000/issues");
+    const data = await res.json();
 
-  output.textContent = JSON.stringify(data, null, 2);
+    if (!data.issues || data.issues.length === 0) {
+      output.textContent = "No issues found.";
+      return;
+    }
+
+    const statusIcons = {
+      queued: "🟡 Queued",
+      running: "🔵 Running",
+      testing: "🟣 Testing",
+      waiting_for_review: "🟢 Waiting For Review",
+      tests_failed: "🔴 Tests Failed",
+      tests_failed_rolled_back: "🟠 Rolled Back",
+      stopped_invalid_patch: "🔴 Invalid Patch",
+      stopped_no_safe_files: "🔴 No Safe Files",
+      stopped_cost_limit: "🔴 Cost Limit Stopped",
+      stopped_loop_detected: "🔴 Loop Detected",
+      stopped_no_valid_patch: "🔴 No Valid Patch",
+      pr_created: "✅ PR Created"
+    };
+
+    output.textContent = data.issues.map(issue => {
+      const status = statusIcons[issue.job_status] || issue.job_status || "Unknown";
+
+      return `
+Issue: ${issue.issue_title}
+Job Status: ${status}
+Approval Status: ${issue.approval_status}
+Created At: ${issue.created_at}
+PR URL: ${issue.pr_url || "Not created yet"}
+-----------------------------
+`;
+    }).join("\n");
+
+  } catch (error) {
+    output.textContent = "Could not load issues. Make sure FastAPI is running.";
+  }
 }
 
 async function approveFix() {
