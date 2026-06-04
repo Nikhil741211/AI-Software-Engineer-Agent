@@ -1,38 +1,43 @@
-PROTECTED_FILES = {
-    "agent.py",
-    "main.py",
-    "worker.py",
-    "database.py",
-    "github_tools.py",
-    "graph_agent.py",
-    "rag_tools.py",
-    "tools.py",
-    "guardrails.py",
-    "loop_detector.py",
-    "diff_tools.py",
-    "safe_file_filter.py",
-    "issue_classifier.py",
-}
+def is_safe_to_edit(path):
+    protected_items = [
+        "agent.py",
+        "worker.py",
+        "main.py",
+        "database.py",
+        "github_tools.py",
+        "repo_manager.py",
+        "tools.py",
+        "rag_tools.py",
+        "safe_file_filter.py",
+        "patch_parser.py",
+        "monitoring.py",
+        "docker-compose.yml",
+        "Dockerfile",
+        ".env",
+        "requirements",
+        "__pycache__",
+        ".git",
+        "venv",
+        ".venv",
+        "node_modules",
 
+        # prevent AI from destroying tests
+        "test_",
+        "tests/"
+    ]
 
-def is_safe_to_edit(file_path):
-    normalized = file_path.replace("\\", "/")
-    filename = normalized.split("/")[-1]
+    for item in protected_items:
+        if item in path:
+            return False
 
-    if filename in PROTECTED_FILES:
-        return False
-
-    if "__pycache__" in normalized:
-        return False
-
-    if normalized.endswith(".db"):
-        return False
-
-    if normalized.endswith(".txt"):
-        return False
-
-    return normalized.endswith(".py")
+    return True
 
 
 def filter_safe_files(files):
-    return [file for file in files if is_safe_to_edit(file)]
+    safe_files = []
+
+    for file in files:
+        if is_safe_to_edit(file):
+            safe_files.append(file)
+
+    return safe_files

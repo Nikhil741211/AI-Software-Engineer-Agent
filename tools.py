@@ -1,6 +1,7 @@
 import os
 import subprocess
 
+
 # READ FILE
 def read_file(path):
     with open(path, "r") as f:
@@ -17,32 +18,56 @@ def write_file(path, content):
 def search_code(keyword):
     results = []
 
-    for file in os.listdir():
-        if file.endswith(".py"):
-            with open(file, "r") as f:
-                content = f.read()
+    for root, dirs, files in os.walk("."):
+        for file in files:
+            if file.endswith(".py"):
+                path = os.path.join(root, file)
 
-                if keyword in content:
-                    results.append(file)
+                try:
+                    with open(path, "r") as f:
+                        content = f.read()
+
+                    if keyword.lower() in content.lower():
+                        results.append(path)
+
+                except Exception:
+                    pass
 
     return results
 
 
 # RUN TESTS
-def run_tests():
+def run_tests(repo_path="workspace/test_repo"):
     result = subprocess.run(
-        ["pytest"],
-        cwd="workspace/test_repo",
+        [
+            "pytest",
+            "--ignore=workspace",
+            "--ignore=.git",
+            "--ignore=__pycache__"
+        ],
+        cwd=repo_path,
         capture_output=True,
         text=True
     )
 
     return result.stdout + result.stderr
+
+
 # FILE TREE TRAVERSAL
 def get_file_tree(root="."):
     files = []
 
     for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [
+            d for d in dirnames
+            if d not in [
+                "__pycache__",
+                ".git",
+                "venv",
+                "node_modules"
+            ]
+        ]
+
         for file in filenames:
             if file.endswith(".py"):
                 files.append(os.path.join(dirpath, file))

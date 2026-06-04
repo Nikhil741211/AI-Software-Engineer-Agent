@@ -1,18 +1,25 @@
 import os
 
-from workspace_manager import get_repo_path
 
-
-def search_relevant_files(query, top_k=3, repo_name="test_repo"):
+def search_relevant_files(query, top_k=3, repo_path="workspace/test_repo"):
     results = []
 
     keywords = query.lower().split()
-    repo_path = get_repo_path(repo_name)
+
+    skip_dirs = [
+        "__pycache__",
+        ".git",
+        "venv",
+        ".venv",
+        "node_modules",
+        ".pytest_cache",
+        "workspace"
+    ]
 
     for root, dirs, files in os.walk(repo_path):
         dirs[:] = [
             d for d in dirs
-            if d not in ["__pycache__", ".git", "venv", "node_modules"]
+            if d not in skip_dirs
         ]
 
         for file in files:

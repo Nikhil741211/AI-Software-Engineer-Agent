@@ -64,15 +64,36 @@ async def github_webhook(request: Request):
     payload = await request.json()
 
     issue = payload.get("issue")
+    repository = payload.get("repository", {})
 
     if issue:
         title = issue.get("title", "")
 
-        q.enqueue(process_issue, title)
+        repo_name = repository.get("name", os.getenv("GITHUB_REPO"))
+        repo_full_name = repository.get(
+            "full_name",
+            f"{os.getenv('GITHUB_OWNER')}/{os.getenv('GITHUB_REPO')}"
+        )
+        clone_url = repository.get(
+            "clone_url",
+            f"https://github.com/{repo_full_name}.git"
+        )
+
+        job_payload = {
+            "issue_title": title,
+            "repo_name": repo_name,
+            "repo_full_name": repo_full_name,
+            "clone_url": clone_url
+        }
+
+        q.enqueue(process_issue, job_payload)
 
         return {
             "status": "queued",
-            "issue": title
+            "issue": title,
+            "repo_name": repo_name,
+            "repo_full_name": repo_full_name,
+            "clone_url": clone_url
         }
 
     return {

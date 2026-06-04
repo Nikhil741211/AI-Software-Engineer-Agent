@@ -1,6 +1,6 @@
 import os
 import time
-import base64
+import subprocess
 import requests
 from dotenv import load_dotenv
 
@@ -24,68 +24,6 @@ def get_default_branch():
     return response.json()["default_branch"]
 
 
-def get_latest_commit_sha(branch):
-    url = f"{BASE_URL}/git/ref/heads/{branch}"
-    response = requests.get(url, headers=HEADERS)
-    response.raise_for_status()
-    return response.json()["object"]["sha"]
-
-
-def create_branch(new_branch):
-    default_branch = get_default_branch()
-    latest_sha = get_latest_commit_sha(default_branch)
-
-    url = f"{BASE_URL}/git/refs"
-
-    data = {
-        "ref": f"refs/heads/{new_branch}",
-        "sha": latest_sha
-    }
-
-    response = requests.post(url, headers=HEADERS, json=data)
-
-    if response.status_code == 422:
-        return {"message": "Branch already exists"}
-
-    response.raise_for_status()
-    return response.json()
-
-
-def get_file_sha(file_path, branch):
-    url = f"{BASE_URL}/contents/{file_path}?ref={branch}"
-    response = requests.get(url, headers=HEADERS)
-
-    if response.status_code == 404:
-        return None
-
-    response.raise_for_status()
-    return response.json()["sha"]
-
-
-def commit_file(file_path, content, branch):
-    url = f"{BASE_URL}/contents/{file_path}"
-
-    encoded_content = base64.b64encode(
-        content.encode("utf-8")
-    ).decode("utf-8")
-
-    file_sha = get_file_sha(file_path, branch)
-
-    data = {
-        "message": f"AI fix: update {file_path}",
-        "content": encoded_content,
-        "branch": branch
-    }
-
-    if file_sha:
-        data["sha"] = file_sha
-
-    response = requests.put(url, headers=HEADERS, json=data)
-    response.raise_for_status()
-
-    return response.json()
-
-
 def create_pull_request(branch):
     default_branch = get_default_branch()
 
@@ -95,30 +33,92 @@ def create_pull_request(branch):
         "title": f"AI Agent Fix - {branch}",
         "head": branch,
         "base": default_branch,
-        "body": "This pull request was created automatically by the AI Software Engineer Agent after human approval."
+        "body": """
+This pull request was created automatically by the AI Software Engineer Agent after human approval.
+
+Workflow:
+- Human reviewed the AI reasoning
+- Human approved the fix
+- Agent created a branch
+- Agent committed changed files
+- Agent pushed the branch
+- Agent opened this pull request
+"""
     }
 
     response = requests.post(url, headers=HEADERS, json=data)
 
     if response.status_code == 422:
-        return {"message": "Pull request may already exist"}
+        return {
+            "message": "Pull request may already exist",
+            "status_code": response.status_code,
+            "details": response.text
+        }
 
     response.raise_for_status()
     return response.json()
 
 
 def create_pr_after_approval():
+    repo_path = "workspace/AI-Software-Engineer-Agent"
     branch = f"ai-agent-fix-{int(time.time())}"
 
-    create_branch(branch)
+    if not os.path.exists(repo_path):
+        return {
+            "error": "Repository not found",
+            "message": "workspace/real_repo does not exist. Clone the repository first."
+        }
 
-    with open("sample_code.py", "r") as f:
-        fixed_code = f.read()
+    subprocess.run(
+        ["git", "-C", repo_path, "checkout", "main"],
+        check=False
+    )
 
-    commit_file(
-        file_path="sample_code.py",
-        content=fixed_code,
-        branch=branch
+    subprocess.run(
+        ["git", "-C", repo_path, "pull"],
+        check=False
+    )
+
+    subprocess.run(
+        ["git", "-C", repo_path, "checkout", "-B", branch],
+        check=True
+    )
+
+    subprocess.run(
+        ["git", "-C", repo_path, "add", "."],
+        check=True
+    )
+
+    commit_result = subprocess.run(
+        [
+            "git",
+            "-C",
+            repo_path,
+            "commit",
+            "-m",
+            "AI Agent Approved Fix"
+        ],
+        capture_output=True,
+        text=True
+    )
+
+    if commit_result.returncode != 0:
+        return {
+            "error": "Nothing to commit or commit failed",
+            "details": commit_result.stdout + commit_result.stderr
+        }
+
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            repo_path,
+            "push",
+            "-u",
+            "origin",
+            branch
+        ],
+        check=True
     )
 
     pr = create_pull_request(branch)
