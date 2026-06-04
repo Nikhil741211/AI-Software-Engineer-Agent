@@ -1,7 +1,10 @@
 import os
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
+
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 
 from redis import Redis
 from rq import Queue
@@ -9,6 +12,18 @@ from rq import Queue
 from database import get_all_issues
 from github_tools import create_pr_after_approval
 from worker import process_issue
+from monitoring import api_requests
+
+
+API_SECRET_KEY = os.getenv("API_SECRET_KEY")
+
+
+def verify_api_key(x_api_key: str = Header(None)):
+    if x_api_key != API_SECRET_KEY:
+        raise HTTPException(
+            status_code=401,
+            detail="Unauthorized"
+        )
 
 
 app = FastAPI()
@@ -35,6 +50,8 @@ q = Queue(connection=redis_conn)
 
 @app.get("/")
 def home():
+    api_requests.inc()
+
     return {
         "message": "AI Software Engineer Agent Running"
     }
@@ -42,6 +59,8 @@ def home():
 
 @app.post("/webhook")
 async def github_webhook(request: Request):
+    api_requests.inc()
+
     payload = await request.json()
 
     issue = payload.get("issue")
@@ -62,7 +81,10 @@ async def github_webhook(request: Request):
 
 
 @app.get("/issues")
-def get_issues():
+def get_issues(x_api_key: str = Header(None)):
+    api_requests.inc()
+    verify_api_key(x_api_key)
+
     rows = get_all_issues()
 
     issues = []
@@ -84,7 +106,10 @@ def get_issues():
 
 
 @app.get("/diff")
-def get_diff():
+def get_diff(x_api_key: str = Header(None)):
+    api_requests.inc()
+    verify_api_key(x_api_key)
+
     try:
         with open("reasoning_log.txt", "r") as f:
             content = f.read()
@@ -102,7 +127,10 @@ def get_diff():
 
 
 @app.post("/approve")
-def approve_fix():
+def approve_fix(x_api_key: str = Header(None)):
+    api_requests.inc()
+    verify_api_key(x_api_key)
+
     pr = create_pr_after_approval()
 
     pr_url = (
@@ -119,8 +147,21 @@ def approve_fix():
 
 
 @app.post("/reject")
-def reject_fix():
+def reject_fix(x_api_key: str = Header(None)):
+    api_requests.inc()
+    verify_api_key(x_api_key)
+
     return {
         "status": "rejected",
         "message": "Fix rejected by reviewer"
     }
+
+
+@app.get("/metrics")
+def metrics():
+    api_requests.inc()
+
+    return Response(
+        generate_latest(),
+        media_type=CONTENT_TYPE_LATEST
+    )
